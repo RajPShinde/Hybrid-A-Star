@@ -1,7 +1,6 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plot
-import heapq
 from heapdict import heapdict
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
                 "/../../CurvesGenerator/")
@@ -51,8 +50,8 @@ def calculateMapParameters(obstacleX, obstacleY, xyResolution, yawResolution)
         return MapParamaters(mapMinX, mapMinY, mapMaxX, mapMaxY, xyResolution, yawResolution, ObstacleKDTree)  
 
 def index(Node):
-
-    return 0
+    # Index is a tuple consisting grid index
+    return tuple([Node.gridIndex[0], Node.gridIndex[1], Node.gridIndex[2]])
 
 def motionCommands():
     direction = 1
@@ -65,11 +64,16 @@ def motionCommands():
 def kinematicSimulationNode(currentNode, motionCommands):
 
     # Simulate node using given current Node and Motion Commands
+    traj
 
     # Calculate Cost of the node
+    cost
 
+    # Find grid index
+    gridIndex[0] = round(traj[-1][0]/mapParamaters.xyResolution)
+    gridIndex[1] = round(traj[-1][1]/mapParamaters.xyResolution)
+    gridIndex[2] = round(traj[-1][2]/mapParamaters.yawResolution)
 
-    gridIndex =
     node = Node(gridIndex, traj, motionCommands[0], motionCommands[1], cost)
     return node
 
@@ -98,7 +102,9 @@ def simulatedPathCost(currentNode, simulatedPath, motionCommands):
     return cost
 
 def map():
-    return 0
+    # Build Map
+
+    return obstacleX, obstacleY
 
 def drawFootprint(path, plot):
     return 0
@@ -128,7 +134,7 @@ def run(s, g, plot):
             return none
 
         # Get first node in the priority queue
-        currentNode = 
+        currentNode = costQueue.popitem()[0]
 
         # Get Reed-Shepp Node if available
         reedSheppNode = analyticExpansion(currentNode, goalNode)
@@ -168,6 +174,7 @@ def main():
     g = [90, 90, np.deg2rad(90)]
 
     # Draw Map
+    obstacleX, obstacleY = map()
 
     # Calculate map Paramaters
     mapParamaters = calculateMapParameters(obstacleX, obstacleY)
