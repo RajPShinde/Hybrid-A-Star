@@ -1,7 +1,11 @@
 import math
 import numpy as np
 import matplotlib.pyplot as plot
+import heapq
 from heapdict import heapdict
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) +
+                "/../../CurvesGenerator/")
+import CurvesGenerator.reeds_shepp as rsCurve
 
 class Car:
     maxSteerAngle = 0.6
@@ -17,20 +21,39 @@ class Cost:
     steerAngleChange = 5
 
 class Node:
-    def __int__(self, traj, steeringAngle, direction, cost):
+    def __int__(self, gridIndex, traj, steeringAngle, direction, cost):
+        self.gridIndex = gridIndex
         self.traj = traj
         self.steeringAngle = steeringAngle
         self.direction = direction
         self.cost = cost
 
-class Params:
-    def __int__(self, mapX, mapY):
-        self.mapX = mapX
-        self.mapY = mapY
+class MapParamaters:
+    def __int__(self, mapMinX, mapMinY, mapMaxX, mapMaxY, xyResolution, yawResolution, ObstacleKDTree):
+        self.mapMinX = mapX
+        self.mapMinY = mapY
+        self.mapMaxX = mapMaxX
+        self.mapMaxY = mapMaxX
+        self.xyResolution = xResolution # grid block length
+        self.yawResolution = yawResolution # grid block possible yaws
+        self.ObstacleKDTree = ObstacleKDTree
+
+def calculateMapParameters(obstacleX, obstacleY, xyResolution, yawResolution)
+        
+        # min max map grid index
+        mapMinX = round(min(obstacleX) / xyResolution)
+        mapMinY = round(min(obstacleY) / xyResolution)
+        mapMaxX = round(max(obstacleX) / xyResolution)
+        mapMaxX = round(max(obstacleY) / xyResolution)
+
+        ObstacleKDTree = kd.KDTree([[x, y] for x, y in zip(obstacleX, obstacleY)])
+
+        return MapParamaters(mapMinX, mapMinY, mapMaxX, mapMaxY, xyResolution, yawResolution, ObstacleKDTree)  
 
 def index(Node):
 
     return 0
+
 def motionCommands():
     direction = 1
     motionCommands = []
@@ -39,8 +62,16 @@ def motionCommands():
         motionCommands.append([i, -direction])
     return motionCommands
 
-def kinematicSimulationNode(steeringAngle, direction):
-    return Node([], [], 0)
+def kinematicSimulationNode(currentNode, motionCommands):
+
+    # Simulate node using given current Node and Motion Commands
+
+    # Calculate Cost of the node
+
+
+    gridIndex =
+    node = Node(gridIndex, traj, motionCommands[0], motionCommands[1], cost)
+    return node
 
 def reedsSheppNode():
     return Node([], [], 0)
@@ -48,7 +79,7 @@ def reedsSheppNode():
 def analyticExpansion():
     return 0
 
-def idValid():
+def isValid():
     return True
 
 def reedsSheppCost():
@@ -86,7 +117,10 @@ def run(s, g, plot):
     closedSet = {}
 
     # Create a priority queue for acquiring nodes based on their cost's
+    costQueue = heapdict.heapdict()
 
+    # Add start mode into priority queue
+    costQueue[index(startNode)] = 0
 
     # Run loop while path is found or open set is empty
     while(true):
@@ -135,8 +169,11 @@ def main():
 
     # Draw Map
 
+    # Calculate map Paramaters
+    mapParamaters = calculateMapParameters(obstacleX, obstacleY)
+
     # Run Hybrid A*
-    path, plot = run(s, g, plot)
+    path, plot = run(s, g, mapParamaters, plot)
 
     # Draw Car Footprint
     drawFootprint(path, plot)
