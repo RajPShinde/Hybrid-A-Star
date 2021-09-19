@@ -21,36 +21,37 @@ class Cost:
 
 class Node:
     def __int__(self, gridIndex, traj, steeringAngle, direction, cost):
-        self.gridIndex = gridIndex
-        self.traj = traj
-        self.steeringAngle = steeringAngle
-        self.direction = direction
-        self.cost = cost
+        self.gridIndex = gridIndex         # grid block x, y, yaw index
+        self.traj = traj                   # trajectory x, y  of a simulated node  
+        self.steeringAngle = steeringAngle # steering angle throughout the trajectory
+        self.direction = direction         # direction throughout the trajectory
+        self.cost = cost                   # node cost
 
 class MapParamaters:
     def __int__(self, mapMinX, mapMinY, mapMaxX, mapMaxY, xyResolution, yawResolution, ObstacleKDTree):
-        self.mapMinX = mapX
-        self.mapMinY = mapY
-        self.mapMaxX = mapMaxX
-        self.mapMaxY = mapMaxX
-        self.xyResolution = xResolution # grid block length
-        self.yawResolution = yawResolution # grid block possible yaws
-        self.ObstacleKDTree = ObstacleKDTree
+        self.mapMinX = mapX                  # map min x coordinate(0)
+        self.mapMinY = mapY                  # map min y coordinate(0)
+        self.mapMaxX = mapMaxX               # map max x coordinate
+        self.mapMaxY = mapMaxX               # map max y coordinate
+        self.xyResolution = xResolution      # grid block length
+        self.yawResolution = yawResolution   # grid block possible yaws
+        self.ObstacleKDTree = ObstacleKDTree # KDTree representating obstacles
 
-def calculateMapParameters(obstacleX, obstacleY, xyResolution, yawResolution)
+def calculateMapParameters(obstacleX, obstacleY, xyResolution, yawResolution):
         
-        # min max map grid index
+        # calculate min max map grid index based on obstacles in map
         mapMinX = round(min(obstacleX) / xyResolution)
         mapMinY = round(min(obstacleY) / xyResolution)
         mapMaxX = round(max(obstacleX) / xyResolution)
         mapMaxX = round(max(obstacleY) / xyResolution)
 
+        # create a KDTree to represent obstacles
         ObstacleKDTree = kd.KDTree([[x, y] for x, y in zip(obstacleX, obstacleY)])
 
         return MapParamaters(mapMinX, mapMinY, mapMaxX, mapMaxY, xyResolution, yawResolution, ObstacleKDTree)  
 
 def index(Node):
-    # Index is a tuple consisting grid index
+    # Index is a tuple consisting grid index, used for checking if two nodes are near/same
     return tuple([Node.gridIndex[0], Node.gridIndex[1], Node.gridIndex[2]])
 
 def motionCommands():
@@ -61,20 +62,27 @@ def motionCommands():
         motionCommands.append([i, -direction])
     return motionCommands
 
-def kinematicSimulationNode(currentNode, motionCommands):
+def kinematicSimulationNode(currentNode, motionCommands, simulationLength=4, step = 0.4 ):
 
     # Simulate node using given current Node and Motion Commands
-    traj
-
-    # Calculate Cost of the node
-    cost
+    traj.append(currentNode.traj[-1][0] + motionCommands[1] * step * math.cos(currentNode.traj[-1][2]),
+                currentNode.traj[-1][1] + motionCommands[1] * step * math.sin(currentNode.traj[-1][2]),
+                rsCurve.pi_2_pi(currentNode.traj[-1][2] + motionCommands[1] * step / Car.wheelBase * math.tan(motionCommands[0])))
+    for i in range((simulationLength/step)-1):
+        traj.append(traj[i][0] + motionCommands[1] * step * math.cos(traj[i][2]),
+                    traj[i][1] + motionCommands[1] * step * math.sin(traj[i][2]),
+                    rsCurve.pi_2_pi(traj[i][2] + motionCommands[1] * step / Car.wheelBase * math.tan(motionCommands[0])))
 
     # Find grid index
     gridIndex[0] = round(traj[-1][0]/mapParamaters.xyResolution)
     gridIndex[1] = round(traj[-1][1]/mapParamaters.xyResolution)
     gridIndex[2] = round(traj[-1][2]/mapParamaters.yawResolution)
 
+    # Calculate Cost of the node
+    cost = simulatedPathCost(currentNode, motionCommands, simulationLength)
+
     node = Node(gridIndex, traj, motionCommands[0], motionCommands[1], cost)
+
     return node
 
 def reedsSheppNode():
@@ -90,14 +98,24 @@ def reedsSheppCost():
     return 0
 
 def simulatedPathCost(currentNode, simulatedPath, motionCommands):
+    # Previos Node Cost
     cost = currentNode.cost
-    if currentNode.direction!=motionCommands[1]:
-        cost = cost + Cost.directionChange
 
-    if motionCommands[1]==-1:
-        cost = cost + Cost.reverse
+    # Distance cost
+    if direction == 1:
+        cost += simulationLength 
+    else:
+        cost += simulationLength * Cost.reverse
 
-    cost = cost + ((currentNode.steeringAngle - motionCommands[0]) * Cost.steerAngleChange) + motionCommands[0] * Cost.steerAngle
+    # Direction change cost
+    if currentNode.direction != motionCommands[1]
+        cost += Cost.directionChange
+
+    # Steering Angle Cost
+    cost += motionCommands[0] * Cost.steerAngle
+
+    # Steering Angle change cost
+    cost += abs(motionCommands[0] - currentNode.steerAngle) * Cost.steerAngleChange
 
     return cost
 
@@ -144,10 +162,10 @@ def run(s, g, plot):
 
         # Get all simulated Nodes from current node
         for i in range(len(motionCommands)):
-            simulatedPath= kinematicSimulationNode(currentNode, motionCommands[i])
+            simulatedNode = kinematicSimulationNode(currentNode, motionCommands[i])
 
             # Check if path is within map bounds and is collision free
-            if not isValid(simulatedPath)
+            if not isValid(simulatedNode)
                 continue
 
             simulatedPathCost = simulatedPathCost(currentNode, simulatedPath, motionCommands[i])
@@ -177,7 +195,7 @@ def main():
     obstacleX, obstacleY = map()
 
     # Calculate map Paramaters
-    mapParamaters = calculateMapParameters(obstacleX, obstacleY)
+    mapParamaters = calculateMapParameters(obstacleX, obstacleY, 2, 0.3)
 
     # Run Hybrid A*
     path, plot = run(s, g, mapParamaters, plot)
