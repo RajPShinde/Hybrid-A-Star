@@ -62,7 +62,7 @@ def motionCommands():
         motionCommands.append([i, -direction])
     return motionCommands
 
-def kinematicSimulationNode(currentNode, motionCommands, simulationLength=4, step = 0.4 ):
+def kinematicSimulationNode(currentNode, motionCommands, mapParamaters, simulationLength=4, step = 0.4 ):
 
     # Simulate node using given current Node and Motion Commands
     traj.append(currentNode.traj[-1][0] + motionCommands[1] * step * math.cos(currentNode.traj[-1][2]),
@@ -78,6 +78,9 @@ def kinematicSimulationNode(currentNode, motionCommands, simulationLength=4, ste
     gridIndex[1] = round(traj[-1][1]/mapParamaters.xyResolution)
     gridIndex[2] = round(traj[-1][2]/mapParamaters.yawResolution)
 
+    if not isValid(traj, gridIndex, mapParamaters):
+        return none
+
     # Calculate Cost of the node
     cost = simulatedPathCost(currentNode, motionCommands, simulationLength)
 
@@ -91,8 +94,17 @@ def reedsSheppNode():
 def analyticExpansion():
     return 0
 
-def isValid():
+def isValid(traj, gridIndex, mapParamaters):
+    if gridIndex[0]<mapParamaters.mapMinX or gridIndex[0]>MapParamaters.mapMaxX or \
+       gridIndex[1]<mapParamaters.mapMinY or gridIndex[1]>MapParamaters.mapMaxY:
+        return False
+    if collision(traj, MapParamaters):
+        return False
     return True
+
+def collision(traj, MapParamaters):
+
+    return False
 
 def reedsSheppCost():
     return 0
@@ -127,7 +139,7 @@ def map():
 def drawFootprint(path, plot):
     return 0
 
-def run(s, g, plot):
+def run(s, g, mapParamaters, plot):
 
     # Generate all Possible motion commands to car
     motionCommands = motionCommands()
@@ -162,15 +174,11 @@ def run(s, g, plot):
 
         # Get all simulated Nodes from current node
         for i in range(len(motionCommands)):
-            simulatedNode = kinematicSimulationNode(currentNode, motionCommands[i])
+            simulatedNode = kinematicSimulationNode(currentNode, motionCommands[i], mapParamaters)
 
             # Check if path is within map bounds and is collision free
-            if not isValid(simulatedNode)
+            if not simulatedNode:
                 continue
-
-            simulatedPathCost = simulatedPathCost(currentNode, simulatedPath, motionCommands[i])
-
-            simulatedNode = Node(path, motionCommands[i][1], simulatedPathCost)
 
             # Check if simulated node is already in closed set
             if index(simulatedNode) in closedSet: 
@@ -193,6 +201,8 @@ def main():
 
     # Draw Map
     obstacleX, obstacleY = map()
+    plot.plot(ox, oy, "sk")
+    plot.show()
 
     # Calculate map Paramaters
     mapParamaters = calculateMapParameters(obstacleX, obstacleY, 2, 0.3)
@@ -200,8 +210,11 @@ def main():
     # Run Hybrid A*
     path, plot = run(s, g, mapParamaters, plot)
 
+    # Draw Path
+    plot.plot(x, y, linewidth=1.5, color='r')
+
     # Draw Car Footprint
-    drawFootprint(path, plot)
+    # drawFootprint(path, plot)
 
 if __name__ == '__main__':
     main()
