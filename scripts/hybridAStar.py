@@ -29,10 +29,9 @@ class Node:
         self.cost = cost                   # node cost
         self.parentGridIndex = self.parentGridIndex
 
-class NodeHolonomic:
-    def __init__(self, x, y, cost, parentIndex):
-        self.x = x
-        self.y = y
+class HolonomicNode:
+    def __init__(self, gridIndex, cost, parentIndex):
+        self.gridIndex = gridIndex
         self.cost = cost
         self.parentIndex = parentIndex
 
@@ -99,7 +98,7 @@ def kinematicSimulationNode(currentNode, motionCommand, mapParameters, simulatio
     # Calculate Cost of the node
     cost = simulatedPathCost(currentNode, motionCommand, simulationLength)
 
-    return Node(gridIndex, traj, motionCommand[0], motionCommand[1], cost, currentNode.gridIndex)
+    return Node(gridIndex, traj, motionCommand[0], motionCommand[1], cost, index(currentNode))
 
 def reedsSheppNode():
     return Node([], [], 0)
@@ -144,8 +143,75 @@ def simulatedPathCost(currentNode, motionCommand, simulationLength):
 
     return cost
 
-def holonomicCost():
-    return 0
+def cost(holonomicMotionCommand):
+    return math.hypot(motionCommand[0], motionCommand[1])
+
+def holonomicNodeIndex(HolonomicNode):
+    return tuple(HolonomicNode.GridIndex[0], HolonomicNode.GridIndex[1])
+
+def obstaclesMap(obstacleX, obstacleY):
+    # Set all Grid locations to No Obstacle
+    obstacles =[[False for i in range(max(obstacleY))]for i in range(max(obstacleX))]
+
+    # Set Grid Locations with obstacles to True
+    for x in range():
+        for y in range():
+            for i, j in zip(obstacleX, obstacleY):
+                if math.hypot(i-obstacleX, j-obstacleY) < = 1:
+                    obstacles[i][j] == True
+                    break
+
+    return obstacles
+
+def holonomicCostsWithObstacles(goalNode, mapParameters):
+
+    GridIndex = [round(gNode.traj[-1][0]/mapParameters.xyResolution), round(gNode.traj[-1][1]/mapParameters.xyResolution)]
+    gNode =HolonomicNode(GridIndex, 0, tupe(GridIndex))
+
+    obstacles = obstaclesMap(mapParameters.obstacleX, mapParameters.obstaclesY)
+
+    holonomicMotionCommand = holonomicMotionCommands()
+
+    openSet = {holonomicNodeIndex(gNode): gNode}
+    closedSet = {}
+
+    priorityQueue =[]
+    heapq.heappush(priorityQueue, (gNode.cost, holonomicNodeIndex(gNode)))
+
+    while(True):
+        if not openSet:
+            break
+
+        currentNodeCost, currentNodeIndex = heapq.heappop(priorityQueue)
+        currentNode = openSet[currentNodeIndex]
+        openSet.pop(currentNodeIndex)
+        closedSet[currentNodeIndex] = currentNode
+
+        for i in range(len(holonomicMotionCommand)):
+            neighbourNode = Holonomic(currentNode.GridIndex[0] + holonomicMotionCommand[i][0],\
+                                      currentNode.GridIndex[1] + holonomicMotionCommand[i][1],\
+                                      currentNode.cost + cost(holonomicMotionCommand[i]), currentNodeIndex)
+
+            if not holonomicNodeIsValid(neighbourNode):
+                continue
+
+            neighbourNodeIndex = holonomicNodeIndex(neighbourNode)
+
+            if neighbourNode not in closedSet:
+                if neighbourNode in openSet:
+                    if neighbourNode.cost < openSet(neighbourNodeIndex).cost:
+                        openSet[neighbourNodeIndex] = neighbourNode
+                        heapq.heappush(priorityQueue, (neighbourNode.cost, neighbourNodeIndex))
+                else:
+                    openSet[neighbourNodeIndex] = neighbourNode
+                    heapq.heappush(priorityQueue, (neighbourNode.cost, neighbourNodeIndex))
+
+    holonomicCost = [[np.inf for i in range(max(obstacleY))]for i in range(max(obstacleX))]
+
+    for nodes in closedSet.values():
+        holonomicCost[nodes.x][nodes.y]=nodes.cost
+
+    return holonomicCost
 
 def map():
     # Build Map
@@ -175,12 +241,12 @@ def run(s, g, mapParameters, plt):
     # Generate all Possible motion commands to car
     motionCommand = motionCommands()
 
-    # Find Holonomic Heuristric
-    holonomicHeuristics = calculateholonomicHeuristics(mapParameters)
-
     # Create start and end Node
     startNode = Node(sGridIndex, [s], 0, 1, 0 , sGridIndex)
     goalNode = Node(gGridIndex, [g], 0, 1, 0, gGridIndex)
+
+    # Find Holonomic Heuristric
+    holonomicHeuristics = calculateholonomicHeuristics(goalNode, mapParameters)
 
     # Add start node to open Set
     openSet = {index(startNode):startNode}
@@ -204,8 +270,9 @@ def run(s, g, mapParameters, plt):
         currentNodeIndex = costQueue.popitem()[0]
         currentNode = openSet[currentNodeIndex]
 
-        # Revove currentNode from openSet
+        # Revove currentNode from openSet and add it to closedSet
         openSet.pop(currentNodeIndex)
+        closedSet[currentNodeIndex] = currentNode
 
         # Get Reed-Shepp Node if available
         # reedSheppNode = analyticExpansion(currentNode, goalNode)
@@ -231,17 +298,16 @@ def run(s, g, mapParameters, plt):
 
             # Check if simulated node is already in closed set
             simulatedNodeIndex = index(simulatedNode)
-            if simulatedNodeIndex in closedSet: 
-                continue
+            if simulatedNodeIndex not in closedSet: 
 
-            # Check if simulated node is already in open set, if not add it open set as well as in priority queue
-            if simulatedNodeIndex not in openSet:
-                openSet[simulatedNodeIndex] = simulatedNode
-                costQueue[simulatedNodeIndex] = simulatedNode.cost
-            else:
-                if simulatedNode.cost < openSet[simulatedNodeIndex].cost:
+                # Check if simulated node is already in open set, if not add it open set as well as in priority queue
+                if simulatedNodeIndex not in openSet:
                     openSet[simulatedNodeIndex] = simulatedNode
                     costQueue[simulatedNodeIndex] = simulatedNode.cost
+                else:
+                    if simulatedNode.cost < openSet[simulatedNodeIndex].cost:
+                        openSet[simulatedNodeIndex] = simulatedNode
+                        costQueue[simulatedNodeIndex] = simulatedNode.cost
     
     plt.show()
 
