@@ -14,6 +14,9 @@ class Car:
     wheelBase = 3.5
     wheelRadius = 0.2
     wheelWidth = 0.2
+    axleToFront = 4.5
+    axleToBack = 1
+    width = 3
 
 class Cost:
     reverse = 5
@@ -98,8 +101,8 @@ def kinematicSimulationNode(currentNode, motionCommand, mapParameters, simulatio
                  round(traj[-1][1]/mapParameters.xyResolution), \
                  round(traj[-1][2]/mapParameters.yawResolution)]
 
-    # if not isValid(traj, gridIndex, mapParameters):
-    #     return None
+    if not isValid(traj, gridIndex, mapParameters):
+        return None
 
     # Calculate Cost of the node
     cost = simulatedPathCost(currentNode, motionCommand, simulationLength)
@@ -121,7 +124,24 @@ def isValid(traj, gridIndex, mapParameters):
     return True
 
 def collision(traj, mapParameters):
+    carRadius = (Car.axleToFront + Car.axleToBack)/2 + 1
+    dl = (Car.axleToFront - Car.axleToBack)/2
+    for i in traj:
+        cx = i[0] + dl * math.cos(i[2])
+        cy = i[1] + dl * math.sin(i[2])
+        pointsInObstacle = mapParameters.ObstacleKDTree.query_ball_point([cx, cy], carRadius)
 
+        if not pointsInObstacle:
+            continue
+
+        for p in pointsInObstacle:
+            xo = mapParameters.obstacleX[p] - cx
+            yo = mapParameters.obstacleY[p] - cy
+            dx = xo * math.cos(i[2]) + yo * math.sin(i[2])
+            dy = -xo * math.sin(i[2]) + yo * math.cos(i[2])
+
+            if abs(dx) < carRadius and abs(dy) < Car.width / 2 + 1:
+                return True
 
     return False
 
@@ -251,6 +271,10 @@ def map():
     for i in range(51):
         obstacleX.append(0)
         obstacleY.append(i)
+    
+    for i in range(10,30):
+        obstacleX.append(20)
+        obstacleY.append(i)  
 
     return obstacleX, obstacleY
 
@@ -305,7 +329,7 @@ def run(s, g, mapParameters, plt):
         counter +=1
         # Check if openSet is empty, if empty no solution available
         if not openSet:
-            return none
+            return None
 
         # Get first node in the priority queue
         currentNodeIndex = costQueue.popitem()[0]
@@ -335,8 +359,8 @@ def run(s, g, mapParameters, plt):
                 continue
 
             # Draw Simulated Node
-            x,y,z =zip(*simulatedNode.traj)
-            plt.plot(x, y)
+            # x,y,z =zip(*simulatedNode.traj)
+            # plt.plot(x, y)
             # print(holonomicHeuristics[simulatedNode.gridIndex[0]][simulatedNode.gridIndex[1]])
 
             # Check if simulated node is already in closed set
@@ -357,7 +381,7 @@ def run(s, g, mapParameters, plt):
     x, y = backtrack(startNode, goalNode, closedSet, plt)
 
     # Draw Path
-    # plt.plot(x, y, linewidth=2, color='r')
+    plt.plot(x, y, linewidth=2, color='r')
     plt.show()
 
     # Draw Car Footprint
@@ -366,7 +390,7 @@ def run(s, g, mapParameters, plt):
 def main():
     # Set Start, Goal x, y, theta
     s = [10, 10, np.deg2rad(45)] 
-    g = [12.7, 12.7, np.deg2rad(45)]
+    g = [40, 40, np.deg2rad(45)]
 
     # Get Obstacle Map
     obstacleX, obstacleY = map()
