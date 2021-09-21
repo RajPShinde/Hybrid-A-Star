@@ -109,8 +109,37 @@ def kinematicSimulationNode(currentNode, motionCommand, mapParameters, simulatio
 
     return Node(gridIndex, traj, motionCommand[0], motionCommand[1], cost, index(currentNode))
 
-def reedsSheppNode():
-    return Node([], [], 0)
+def reedsSheppNode(currentNode, goalNode, mapParameters):
+
+    # Get x, y, yaw of currentNode and goalNode
+    startX, startY, startYaw = currentNode.traj[-1][0], currentNode.traj[-1][1], currentNode.traj[-1][2]
+    goalX, goalY, goalYaw = goalNode.traj[-1][0], goalNode.traj[-1][1], goalNode.traj[-1][2]
+
+    # Instantaneous Radius of Curvature
+    radius = math.tan(Car.maxSteerAngle)/Car.wheelBase
+    #  Find all possible reeds-shepp paths between current and goal node
+    reedsSheppPaths = rsCurve.calc_all_paths(startX, startY, startYaw, goalX, goalY, goalYaw, radius)
+
+    # Check if reedsSheppPaths is empty
+    if not reedsSheppPaths:
+        return None
+
+    # Find path with lowest cost considering non-holonomic constraints
+    costQueue = heapdict()
+    for path in reedsSheppPaths:
+        costQueue[path] = reedsSheppCost(currentNode, path)
+
+    # Find first path in priority queue that is collision free
+    while len(costQueue)!=0:
+        path = costQueue.popitem()[0]
+        traj=[]
+        traj = [[path.x[k],path.y[k],path.yaw[k]] for k in range(len(path.x))]
+        if not collision(traj, mapParameters):
+            cost = reedsSheppCost(currentNode, path)
+            print("got")
+            return Node(goalNode.gridIndex ,traj, None, None, cost, index(currentNode))
+            
+    return None
 
 def analyticExpansion():
     return 0
@@ -145,8 +174,34 @@ def collision(traj, mapParameters):
 
     return False
 
-def reedsSheppCost():
-    return 0
+def reedsSheppCost(currentNode, path):
+    # Previos Node Cost
+    cost = currentNode.cost
+
+    # Distance cost
+    for i in path.lengths:
+        if i >= 0:
+            cost += 1
+        else:
+            cost += abs(i) * Cost.reverse
+
+    # Direction change cost
+    for i in range(len(path.lengths)-1):
+        if path.lengths[i] * path.lengths[i+1] < 0:
+            cost += Cost.directionChange
+
+    # Steering Angle Cost
+    for i in path.ctypes:
+        # Check types which are not straight line
+        if i!="S":
+            cost += Car.maxSteerAngle * Cost.steerAngle
+
+    # # Steering Angle change cost
+    # for i in range(len(path.lengths)-1):
+    #     if path.ctypes[i] + path.ctypes = "CS" or path.ctypes[i] + path.ctypes = "SC"
+    #         cost += 
+
+    return cost
 
 def simulatedPathCost(currentNode, motionCommand, simulationLength):
     # Previos Node Cost
@@ -272,9 +327,30 @@ def map():
         obstacleX.append(0)
         obstacleY.append(i)
     
-    for i in range(10,30):
+    for i in range(10,20):
+        obstacleX.append(i)
+        obstacleY.append(30) 
+
+    for i in range(30,51):
+        obstacleX.append(i)
+        obstacleY.append(30) 
+
+    for i in range(0,31):
         obstacleX.append(20)
-        obstacleY.append(i)  
+        obstacleY.append(i) 
+
+    for i in range(0,31):
+        obstacleX.append(30)
+        obstacleY.append(i) 
+
+    for i in range(40,50):
+        obstacleX.append(15)
+        obstacleY.append(i)
+
+    for i in range(25,40):
+        obstacleX.append(i)
+        obstacleY.append(35)
+
 
     return obstacleX, obstacleY
 
@@ -340,14 +416,15 @@ def run(s, g, mapParameters, plt):
         closedSet[currentNodeIndex] = currentNode
 
         # Get Reed-Shepp Node if available
-        # reedSheppNode = analyticExpansion(currentNode, goalNode)
+        rSNode = reedsSheppNode(currentNode, goalNode, mapParameters)
 
-        # if not reedSheppNode:
+        if rSNode:
+            closedSet[index(rSNode)] = rSNode
+            break
 
         if currentNodeIndex == index(goalNode):
             print("Path Found")
             print(currentNode.traj[-1])
-            # plt.show()
             break
 
         # Get all simulated Nodes from current node
@@ -360,7 +437,7 @@ def run(s, g, mapParameters, plt):
 
             # Draw Simulated Node
             # x,y,z =zip(*simulatedNode.traj)
-            # plt.plot(x, y)
+            # plt.plot(x, y, linewidth=0.3, color='y')
             # print(holonomicHeuristics[simulatedNode.gridIndex[0]][simulatedNode.gridIndex[1]])
 
             # Check if simulated node is already in closed set
@@ -380,17 +457,12 @@ def run(s, g, mapParameters, plt):
     # Backtrack
     x, y = backtrack(startNode, goalNode, closedSet, plt)
 
-    # Draw Path
-    plt.plot(x, y, linewidth=2, color='r')
-    plt.show()
-
-    # Draw Car Footprint
-    # drawFootprint(path, plot)
+    return x,y
 
 def main():
     # Set Start, Goal x, y, theta
-    s = [10, 10, np.deg2rad(45)] 
-    g = [40, 40, np.deg2rad(45)]
+    s = [10, 10, np.deg2rad(90)] 
+    g = [25, 20, np.deg2rad(90)]
 
     # Get Obstacle Map
     obstacleX, obstacleY = map()
@@ -404,7 +476,24 @@ def main():
     plt.plot(obstacleX, obstacleY, "sk")
 
     # Run Hybrid A*
-    run(s, g, mapParameters, plt)
+    x, y = run(s, g, mapParameters, plt)
+
+    # Draw Map
+    plt.xlim(min(obstacleX), max(obstacleX)) 
+    plt.ylim(min(obstacleY), max(obstacleY))
+    plt.plot(obstacleX, obstacleY, "sk")
+
+    # Draw Path
+    plt.plot(x, y, linewidth=2, color='r')
+
+    # Draw Car Footprint
+    # drawFootprint(path, plot)
+
+    # Draw Start and Goal Location
+    plt.arrow(s[0], s[1], 1*math.cos(s[2]), 1*math.sin(s[2]), width=.1)
+    plt.arrow(25, 20, 1*math.cos(g[2]), 1*math.sin(g[2]), width=.1)
+
+    plt.show()
 
 if __name__ == '__main__':
     main()
