@@ -5,9 +5,14 @@ Motion Planner for a Car based of Kinematic & Reeds-Shepp Node expansions and a 
 Path             |  Node Simulations
 :-------------------------:|:-------------------------:
 <img src="/data/simpleGoal/simpleGoal1.png"/> | <img src="/data/simpleGoal/simpleGoal2.png"/>
+Footprint             |  Animation
+:-------------------------:|:-------------------------:
 <img src="/data/simpleGoal/simpleGoal3.gif"/> | <img src="/data/simpleGoal/simpleGoal4.gif"/>
-
+<br />
+<br />
 Path             |  Node Simulations
 :-------------------------:|:-------------------------:
 <img src="/data/parking/parking1.png"/> | <img src="/data/parking/parking2.png"/>
+Footprint             |  Animation
+:-------------------------:|:-------------------------:
 <img src="/data/parking/parking3.gif"/> | <img src="/data/parking/parking4.gif"/>
