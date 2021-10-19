@@ -18,7 +18,7 @@ class Car:
 
 class Cost:
     reverse = 10
-    directionChange = 100
+    directionChange = 150
     steerAngle = 1
     steerAngleChange = 5
     hybridCost = 50
@@ -374,6 +374,47 @@ def map():
         obstacleX.append(i)
         obstacleY.append(35)
 
+    # Parking Map
+    # for i in range(51):
+    #     obstacleX.append(i)
+    #     obstacleY.append(0)
+
+    # for i in range(51):
+    #     obstacleX.append(0)
+    #     obstacleY.append(i)
+
+    # for i in range(51):
+    #     obstacleX.append(i)
+    #     obstacleY.append(50)
+
+    # for i in range(51):
+    #     obstacleX.append(50)
+    #     obstacleY.append(i)
+
+    # for i in range(51):
+    #     obstacleX.append(i)
+    #     obstacleY.append(40)
+
+    # for i in range(0,20):
+    #     obstacleX.append(i)
+    #     obstacleY.append(30) 
+
+    # for i in range(29,51):
+    #     obstacleX.append(i)
+    #     obstacleY.append(30) 
+
+    # for i in range(24,30):
+    #     obstacleX.append(19)
+    #     obstacleY.append(i) 
+
+    # for i in range(24,30):
+    #     obstacleX.append(29)
+    #     obstacleY.append(i) 
+
+    # for i in range(20,29):
+    #     obstacleX.append(i)
+    #     obstacleY.append(24)
+
     return obstacleX, obstacleY
 
 def backtrack(startNode, goalNode, closedSet, plt):
@@ -502,6 +543,8 @@ def main():
     # Set Start, Goal x, y, theta
     s = [10, 10, np.deg2rad(90)]
     g = [25, 20, np.deg2rad(90)]
+    # s = [10, 35, np.deg2rad(0)]
+    # g = [22, 28, np.deg2rad(0)]
 
     # Get Obstacle Map
     obstacleX, obstacleY = map()
